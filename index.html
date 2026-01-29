@@ -1,948 +1,482 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ko">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>AIoT 블록체인 SSI 관리 메커니즘</title>
-        <script src="https://cdn.tailwindcss.com"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
-        <!-- 선택된 팔레트: Warm Neutrals & Tech Slate -->
-        <style>
-            @import url("https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;600;700&display=swap");
-            body {
-                font-family: "Pretendard", sans-serif;
-                background-color: #f8fafc;
-                color: #334155;
-            }
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIoT 블록체인 SSI 관리 메커니즘</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        @import url("https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;600;700&display=swap");
+        body {
+            font-family: "Pretendard", sans-serif;
+            background-color: #f8fafc;
+            color: #334155;
+            overflow-x: hidden;
+        }
 
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            height: 320px;
+            margin: 0 auto;
+        }
+        @media (min-width: 768px) {
             .chart-container {
-                position: relative;
-                width: 100%;
-                max-width: 600px;
-                height: 350px;
-                margin-left: auto;
-                margin-right: auto;
+                height: 380px;
             }
-            @media (min-width: 768px) {
-                .chart-container {
-                    height: 400px;
-                    max-height: 400px;
-                }
-            }
+        }
 
-            .nav-item.active {
-                color: #0f766e;
-                border-bottom: 2px solid #0f766e;
-            }
+        .nav-item.active {
+            color: #0f766e;
+            border-bottom: 2px solid #0f766e;
+        }
 
-            .interactive-card {
-                transition: all 0.3s ease;
-            }
-            .interactive-card:hover {
-                transform: translateY(-2px);
-                box-shadow:
-                    0 10px 15px -3px rgba(0, 0, 0, 0.1),
-                    0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            }
+        .interactive-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .interactive-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 20px -5px rgba(0, 0, 0, 0.1);
+        }
 
-            ::-webkit-scrollbar {
-                width: 8px;
-            }
-            ::-webkit-scrollbar-track {
-                background: #f1f5f9;
-            }
-            ::-webkit-scrollbar-thumb {
-                background: #cbd5e1;
-                border-radius: 4px;
-            }
-            ::-webkit-scrollbar-thumb:hover {
-                background: #94a3b8;
-            }
-        </style>
-    </head>
-    <body class="flex flex-col min-h-screen">
-        <!-- 네비게이션 -->
-        <nav
-            class="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-sm"
-        >
+        /* 아키텍처 버튼 활성화 스타일 */
+        .entity-btn {
+            transition: all 0.3s ease;
+            border-width: 2px;
+        }
+        .entity-btn.active-teal {
+            background-color: #f0fdfa; /* teal-50 */
+            border-color: #0d9488; /* teal-600 */
+        }
+        .entity-btn.inactive {
+            background-color: #ffffff;
+            border-color: transparent;
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        .fade-in { animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen">
+
+    <nav class="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <span class="text-xl font-bold text-slate-800 tracking-tight">
+                        AIoT <span class="text-teal-700">SSI</span> Dashboard
+                    </span>
+                </div>
+                <div class="hidden md:flex space-x-6 items-center" id="nav-links">
+                    <button onclick="scrollToSection('overview')" class="nav-item active text-slate-600 hover:text-teal-700 px-2 py-2 text-sm font-semibold transition-all">개요</button>
+                    <button onclick="scrollToSection('architecture')" class="nav-item text-slate-600 hover:text-teal-700 px-2 py-2 text-sm font-semibold transition-all">아키텍처</button>
+                    <button onclick="scrollToSection('mechanisms')" class="nav-item text-slate-600 hover:text-teal-700 px-2 py-2 text-sm font-semibold transition-all">핵심 기술</button>
+                    <button onclick="scrollToSection('performance')" class="nav-item text-slate-600 hover:text-teal-700 px-2 py-2 text-sm font-semibold transition-all">실험 데이터</button>
+                </div>
+                <div class="md:hidden flex items-center">
+                    <button id="mobile-menu-btn" class="p-2 text-slate-600 hover:text-teal-700 focus:outline-none">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div id="mobile-menu" class="hidden md:hidden bg-white border-b border-slate-200">
+             <button onclick="scrollToSection('overview')" class="block w-full text-left px-6 py-4 text-slate-600 hover:bg-slate-50 border-b border-slate-100">개요</button>
+             <button onclick="scrollToSection('architecture')" class="block w-full text-left px-6 py-4 text-slate-600 hover:bg-slate-50 border-b border-slate-100">아키텍처</button>
+             <button onclick="scrollToSection('mechanisms')" class="block w-full text-left px-6 py-4 text-slate-600 hover:bg-slate-50 border-b border-slate-100">핵심 기술</button>
+             <button onclick="scrollToSection('performance')" class="block w-full text-left px-6 py-4 text-slate-600 hover:bg-slate-50">실험 데이터</button>
+        </div>
+    </nav>
+
+    <main class="flex-grow">
+        
+        <section id="overview" class="py-16 bg-slate-50">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between h-16">
-                    <div class="flex items-center">
-                        <span
-                            class="text-xl font-bold text-slate-800 tracking-tight"
-                            >AIoT
-                            <span class="text-teal-700">SSI</span>
-                            Dashboard</span
-                        >
+                <div class="text-center max-w-3xl mx-auto mb-16">
+                    <h1 class="text-3xl md:text-5xl font-black text-slate-900 mb-6 leading-tight">
+                        AIoT 환경의 블록체인 기반<br>
+                        <span class="text-teal-700">자기주권신원(SSI) 관리</span>
+                    </h1>
+                    <p class="text-lg text-slate-600 leading-relaxed">
+                        제로 트러스트(Zero-Trust) 모델과 선택적 공개(SD) 기술을 활용하여 
+                        AIoT 장치의 보안성과 프라이버시를 동시에 확보하는 혁신적인 관리 메커니즘을 분석합니다.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div class="interactive-card bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
+                        <div class="w-12 h-12 bg-teal-100 text-teal-700 rounded-xl flex items-center justify-center text-2xl mb-6">🛡️</div>
+                        <h3 class="text-xl font-bold text-slate-800 mb-3">제로 트러스트 (ZT)</h3>
+                        <p class="text-slate-500 text-sm leading-relaxed">
+                            "절대 신뢰하지 말고 항상 검증하라." 지속적인 인증과 최소 권한 원칙을 통해 내부 침입 확산을 차단합니다.
+                        </p>
                     </div>
-                    <div
-                        class="hidden md:flex space-x-8 items-center"
-                        id="nav-links"
-                    >
-                        <button
-                            onclick="scrollToSection('overview')"
-                            class="nav-item active text-slate-600 hover:text-teal-700 px-3 py-2 text-sm font-medium transition-colors"
-                        >
-                            개요
-                        </button>
-                        <button
-                            onclick="scrollToSection('architecture')"
-                            class="nav-item text-slate-600 hover:text-teal-700 px-3 py-2 text-sm font-medium transition-colors"
-                        >
-                            아키텍처
-                        </button>
-                        <button
-                            onclick="scrollToSection('mechanisms')"
-                            class="nav-item text-slate-600 hover:text-teal-700 px-3 py-2 text-sm font-medium transition-colors"
-                        >
-                            핵심 메커니즘
-                        </button>
-                        <button
-                            onclick="scrollToSection('performance')"
-                            class="nav-item text-slate-600 hover:text-teal-700 px-3 py-2 text-sm font-medium transition-colors"
-                        >
-                            데이터 분석
-                        </button>
+                    <div class="interactive-card bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
+                        <div class="w-12 h-12 bg-blue-100 text-blue-700 rounded-xl flex items-center justify-center text-2xl mb-6">🔐</div>
+                        <h3 class="text-xl font-bold text-slate-800 mb-3">자기주권신원 (SSI)</h3>
+                        <p class="text-slate-500 text-sm leading-relaxed">
+                            중앙 기관 없이 개별 장치가 자신의 신원을 소유하고 관리합니다. 블록체인을 통해 데이터 위변조를 방지합니다.
+                        </p>
                     </div>
-                    <div class="md:hidden flex items-center">
-                        <button
-                            id="mobile-menu-btn"
-                            class="text-slate-600 hover:text-teal-700"
-                        >
-                            <span class="text-2xl">☰</span>
-                        </button>
+                    <div class="interactive-card bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
+                        <div class="w-12 h-12 bg-indigo-100 text-indigo-700 rounded-xl flex items-center justify-center text-2xl mb-6">🔍</div>
+                        <h3 class="text-xl font-bold text-slate-800 mb-3">선택적 공개 (SD)</h3>
+                        <p class="text-slate-500 text-sm leading-relaxed">
+                            영지식 증명을 사용하여 민감한 개인 정보를 숨긴 채 필요한 최소한의 속성(Attribute)만 검증자에게 증명합니다.
+                        </p>
                     </div>
                 </div>
             </div>
-            <div
-                id="mobile-menu"
-                class="hidden md:hidden bg-white border-b border-slate-200"
-            >
-                <button
-                    onclick="scrollToSection('overview')"
-                    class="block w-full text-left px-4 py-3 text-slate-600 hover:bg-slate-50"
-                >
-                    개요
-                </button>
-                <button
-                    onclick="scrollToSection('architecture')"
-                    class="block w-full text-left px-4 py-3 text-slate-600 hover:bg-slate-50"
-                >
-                    아키텍처
-                </button>
-                <button
-                    onclick="scrollToSection('mechanisms')"
-                    class="block w-full text-left px-4 py-3 text-slate-600 hover:bg-slate-50"
-                >
-                    핵심 메커니즘
-                </button>
-                <button
-                    onclick="scrollToSection('performance')"
-                    class="block w-full text-left px-4 py-3 text-slate-600 hover:bg-slate-50"
-                >
-                    데이터 분석
-                </button>
+        </section>
+
+        <!-- 섹션 2: 표준 아키텍처 -->
+        <section id="architecture" class="py-20 bg-white">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex flex-col md:flex-row justify-between items-end mb-12 gap-4">
+                    <div class="max-w-2xl">
+                        <h2 class="text-3xl font-bold text-slate-900 mb-4">표준 아키텍처</h2>
+                        <p class="text-slate-600">
+                            교육 과정에서 다룬 DID 생태계의 4대 핵심 요소를 논문의 엔티티와 매핑했습니다. 
+                            각 구성 요소를 클릭하여 상세 역할을 확인하세요.
+                        </p>
+                    </div>
+                    <div class="text-xs font-bold text-teal-600 bg-teal-50 px-3 py-1 rounded-full uppercase tracking-widest">Interactive Diagram</div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+                    <div class="lg:col-span-7 bg-slate-50 rounded-3xl border border-slate-200 p-8 md:p-12 relative">
+                        <div class="grid grid-cols-2 gap-6 md:gap-12 relative z-10" id="entity-grid">
+                            <!-- Registrar -->
+                            <div id="btn-kgc" onclick="showEntityDetails('kgc')" class="entity-btn inactive cursor-pointer p-6 rounded-2xl shadow-sm flex flex-col items-center group">
+                                <div class="text-4xl mb-4 group-hover:scale-110 transition-transform">🔑</div>
+                                <h4 class="font-bold text-slate-800">KGC</h4>
+                                <span class="text-[10px] text-slate-400 font-bold uppercase">DID Registrar</span>
+                            </div>
+                            <!-- Holder -->
+                            <div id="btn-user" onclick="showEntityDetails('user')" class="entity-btn inactive cursor-pointer p-6 rounded-2xl shadow-sm flex flex-col items-center group">
+                                <div class="text-4xl mb-4 group-hover:scale-110 transition-transform">👤</div>
+                                <h4 class="font-bold text-slate-800">Device</h4>
+                                <span class="text-[10px] text-slate-400 font-bold uppercase">Holder / Subject</span>
+                            </div>
+                            <!-- VDR -->
+                            <div id="btn-blockchain" onclick="showEntityDetails('blockchain')" class="entity-btn inactive cursor-pointer p-6 rounded-2xl shadow-sm flex flex-col items-center group">
+                                <div class="text-4xl mb-4 group-hover:scale-110 transition-transform">⛓️</div>
+                                <h4 class="font-bold text-slate-800">Blockchain</h4>
+                                <span class="text-[10px] text-slate-400 font-bold uppercase">VDR / Registry</span>
+                            </div>
+                            <!-- Issuer -->
+                            <div id="btn-ssim" onclick="showEntityDetails('ssim')" class="entity-btn inactive cursor-pointer p-6 rounded-2xl shadow-sm flex flex-col items-center group">
+                                <div class="text-4xl mb-4 group-hover:scale-110 transition-transform">⚙️</div>
+                                <h4 class="font-bold text-slate-800">SSIM</h4>
+                                <span class="text-[10px] text-slate-400 font-bold uppercase">Issuer (VC 발급)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-5 bg-slate-800 text-white rounded-3xl p-8 flex flex-col justify-center shadow-xl">
+                        <div id="entity-details" class="fade-in"></div>
+                    </div>
+                </div>
             </div>
-        </nav>
+        </section>
 
-        <main class="flex-grow">
-            <!-- 섹션 1: 개요 -->
-            <section id="overview" class="py-12 bg-slate-50">
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div class="text-center mb-12">
-                        <h1
-                            class="text-3xl md:text-4xl font-extrabold text-slate-900 mb-4"
-                        >
-                            AIoT 환경에서의 블록체인 기반<br />
-                            <span class="text-teal-700"
-                                >자기주권신원(SSI) 관리 메커니즘</span
-                            >
-                        </h1>
-                        <p
-                            class="mt-4 max-w-2xl mx-auto text-lg text-slate-600"
-                        >
-                            제로 트러스트(Zero-Trust) 원칙과 선택적 공개(SD)
-                            기술을 결합한 지능형 사물인터넷 보안 프레임워크의
-                            분석입니다.
-                        </p>
+        <section id="mechanisms" class="py-20 bg-slate-50">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="mb-16">
+                    <h2 class="text-3xl font-bold text-slate-900 mb-4">핵심 기술 시뮬레이션</h2>
+                    <p class="text-slate-600 max-w-3xl">
+                        논문에서 제안한 두 가지 핵심 알고리즘(선택적 공개 및 상황 인식 권한 생성)의 작동 원리를 직접 체험해 볼 수 있습니다.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                    <div class="bg-white rounded-3xl shadow-sm border border-slate-200 p-8">
+                        <div class="flex items-center justify-between mb-8">
+                            <h3 class="text-xl font-bold text-slate-800">1. 선택적 공개(SD) 최적화</h3>
+                            <span class="bg-teal-100 text-teal-800 text-xs px-3 py-1 rounded-full font-bold">Privacy Control</span>
+                        </div>
+                        <div class="space-y-4 mb-10 bg-slate-50 p-6 rounded-2xl">
+                            <p class="text-xs font-bold text-slate-400 mb-2 uppercase">증명서(VP)에 포함할 속성 선택</p>
+                            <label class="flex items-center justify-between cursor-pointer">
+                                <div class="flex items-center space-x-3">
+                                    <input type="checkbox" class="sd-checkbox w-5 h-5 text-teal-600 rounded focus:ring-teal-500" value="20" checked onchange="updateSDSim()">
+                                    <span class="text-sm font-medium text-slate-700">실시간 위치 정보</span>
+                                </div>
+                                <span class="text-[10px] text-red-400 font-bold uppercase">High Risk</span>
+                            </label>
+                            <label class="flex items-center justify-between cursor-pointer">
+                                <div class="flex items-center space-x-3">
+                                    <input type="checkbox" class="sd-checkbox w-5 h-5 text-teal-600 rounded focus:ring-teal-500" value="15" onchange="updateSDSim()">
+                                    <span class="text-sm font-medium text-slate-700">기기 고유 식별자</span>
+                                </div>
+                                <span class="text-[10px] text-orange-400 font-bold uppercase">Med Risk</span>
+                            </label>
+                            <label class="flex items-center justify-between cursor-pointer">
+                                <div class="flex items-center space-x-3">
+                                    <input type="checkbox" class="sd-checkbox w-5 h-5 text-teal-600 rounded focus:ring-teal-500" value="30" onchange="updateSDSim()">
+                                    <span class="text-sm font-medium text-slate-700">결제 및 소유주 정보</span>
+                                </div>
+                                <span class="text-[10px] text-red-500 font-bold uppercase">Critical</span>
+                            </label>
+                            <label class="flex items-center justify-between cursor-pointer">
+                                <div class="flex items-center space-x-3">
+                                    <input type="checkbox" class="sd-checkbox w-5 h-5 text-teal-600 rounded focus:ring-teal-500" value="10" onchange="updateSDSim()">
+                                    <span class="text-sm font-medium text-slate-700">사용 패턴 로그</span>
+                                </div>
+                                <span class="text-[10px] text-slate-400 font-bold uppercase">Low Risk</span>
+                            </label>
+                        </div>
+                        <div class="grid grid-cols-2 gap-6">
+                            <div class="bg-slate-900 rounded-2xl p-6 text-center shadow-lg">
+                                <div class="text-[10px] text-slate-400 font-bold uppercase mb-2">프라이버시 엔트로피</div>
+                                <div id="entropy-val" class="text-3xl font-bold text-teal-400">4.2</div>
+                                <div class="text-[10px] text-slate-500 mt-2">(높을수록 데이터 은닉 우수)</div>
+                            </div>
+                            <div class="bg-slate-900 rounded-2xl p-6 text-center shadow-lg">
+                                <div class="text-[10px] text-slate-400 font-bold uppercase mb-2">추론 공격 성공률</div>
+                                <div id="attack-val" class="text-3xl font-bold text-red-400">12.4%</div>
+                                <div class="text-[10px] text-slate-500 mt-2">(낮을수록 외부 유출 안전)</div>
+                            </div>
+                        </div>
                     </div>
 
-                    <div
-                        class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8"
-                    >
-                        <h3 class="text-lg font-semibold text-slate-800 mb-2">
-                            도전 과제와 해결책
-                        </h3>
-                        <p class="text-slate-600 leading-relaxed">
-                            AIoT의 급격한 성장은
-                            <strong>권한 변동(Permission Drift)</strong>과
-                            <strong>크로스 도메인 접근</strong> 위험을
-                            초래합니다. 기존의 중앙 집중식 신원 시스템은 대규모
-                            장치 확장에 비효율적입니다. 본 리포트에서 다루는
-                            솔루션은 <strong>블록체인 기반 SSI</strong>와
-                            <strong>제로 트러스트</strong>를 결합하여, 장치가
-                            "필요한 때에, 필요한 정보만" 접근하도록 보장합니다.
-                        </p>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div
-                            class="interactive-card bg-white p-6 rounded-xl shadow-sm border-t-4 border-teal-500"
-                        >
-                            <h3 class="text-lg font-bold text-slate-800 mb-2">
-                                제로 트러스트 보안 (Zero Trust Security)
-                            </h3>
-                            <p class="text-sm text-slate-600">
-                                "아무도 믿지 말고 항상 검증하라." 모든 접근
-                                요청에 대한 지속적인 검증을 통해 권한 남용을
-                                방지합니다.
-                            </p>
+                    <div class="bg-white rounded-3xl shadow-sm border border-slate-200 p-8">
+                        <div class="flex items-center justify-between mb-8">
+                            <h3 class="text-xl font-bold text-slate-800">2. 상황 인식형 최소 권한 부여</h3>
+                            <span class="bg-indigo-100 text-indigo-800 text-xs px-3 py-1 rounded-full font-bold">Zero Trust Engine</span>
                         </div>
-                        <div
-                            class="interactive-card bg-white p-6 rounded-xl shadow-sm border-t-4 border-blue-500"
-                        >
-                            <h3 class="text-lg font-bold text-slate-800 mb-2">
-                                자기주권신원 (SSI)
-                            </h3>
-                            <p class="text-sm text-slate-600">
-                                블록체인에 저장된 탈중앙화 신원. 사용자 및
-                                장치가 자신의 신원 데이터에 대한 완전한 소유권을
-                                가집니다.
-                            </p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                            <div class="bg-slate-50 p-4 rounded-xl">
+                                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-2">장치 접속 위치</label>
+                                <select id="ctx-location" onchange="updatePermSim()" class="w-full text-sm border-none bg-transparent font-semibold text-slate-700 focus:ring-0">
+                                    <option value="safe">보안 구역 (Intranet)</option>
+                                    <option value="public">공공 장소 (Public WiFi)</option>
+                                    <option value="unknown">알 수 없는 지역 (Foreign)</option>
+                                </select>
+                            </div>
+                            <div class="bg-slate-50 p-4 rounded-xl">
+                                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-2">네트워크 보안 수준</label>
+                                <select id="ctx-network" onchange="updatePermSim()" class="w-full text-sm border-none bg-transparent font-semibold text-slate-700 focus:ring-0">
+                                    <option value="encrypted">VPN / 암호화 채널</option>
+                                    <option value="open">개방형 채널</option>
+                                </select>
+                            </div>
                         </div>
-                        <div
-                            class="interactive-card bg-white p-6 rounded-xl shadow-sm border-t-4 border-indigo-500"
-                        >
-                            <h3 class="text-lg font-bold text-slate-800 mb-2">
-                                선택적 공개 (SD / SelD)
-                            </h3>
-                            <p class="text-sm text-slate-600">
-                                영지식 증명을 사용하여 전체 데이터 노출 없이
-                                필요한 속성만 증명합니다. (예: "성인임"만
-                                증명하고 생년월일은 숨김)
-                            </p>
+                        <div class="bg-slate-800 rounded-2xl p-6 h-48 overflow-y-auto font-mono text-xs border border-slate-700 shadow-inner">
+                            <div class="text-slate-500 mb-3 flex items-center">
+                                <span class="inline-block w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></span>
+                                Assessing context... Algorithm 1 triggered.
+                            </div>
+                            <ul id="perm-list" class="space-y-2"></ul>
                         </div>
                     </div>
                 </div>
-            </section>
-
-            <!-- 섹션 2: 아키텍처 -->
-            <section id="architecture" class="py-12 bg-white">
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div class="mb-8">
-                        <h2 class="text-2xl font-bold text-slate-900">
-                            시스템 아키텍처
-                        </h2>
-                        <p class="text-slate-600 mt-2">
-                            각 블록을 클릭하여
-                            <strong>제로 트러스트 환경</strong>에서의 역할을
-                            확인할 수 있습니다.
-                        </p>
-                    </div>
-
-                    <div
-                        class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch h-auto lg:h-96"
-                    >
-                        <div
-                            class="lg:col-span-8 bg-slate-50 rounded-2xl border border-slate-200 p-8 relative overflow-hidden"
-                        >
-                            <div
-                                class="absolute top-4 left-4 text-xs font-bold text-slate-400 uppercase tracking-wide"
-                            >
-                                제로 트러스트 경계
-                            </div>
-
-                            <div
-                                class="grid grid-cols-2 gap-8 h-full relative z-10"
-                            >
-                                <div
-                                    onclick="showEntityDetails('kgc')"
-                                    class="cursor-pointer bg-white p-4 rounded-lg shadow-sm border-2 border-transparent hover:border-teal-500 transition-all flex flex-col justify-center items-center text-center group"
-                                >
-                                    <div
-                                        class="text-3xl mb-2 group-hover:scale-110 transition-transform"
-                                    >
-                                        🔑
-                                    </div>
-                                    <h4 class="font-bold text-slate-800">
-                                        KGC
-                                    </h4>
-                                    <p class="text-xs text-slate-500">
-                                        DID Registrar (등록 대행)
-                                    </p>
-                                </div>
-                                <div
-                                    onclick="showEntityDetails('user')"
-                                    class="cursor-pointer bg-white p-4 rounded-lg shadow-sm border-2 border-transparent hover:border-teal-500 transition-all flex flex-col justify-center items-center text-center group"
-                                >
-                                    <div
-                                        class="text-3xl mb-2 group-hover:scale-110 transition-transform"
-                                    >
-                                        👤
-                                    </div>
-                                    <h4 class="font-bold text-slate-800">
-                                        User / Device
-                                    </h4>
-                                    <h6 class="text-[10px] text-slate-400">
-                                        Holder & DID Subject
-                                    </h6>
-                                </div>
-                                <div
-                                    onclick="showEntityDetails('blockchain')"
-                                    class="cursor-pointer bg-white p-4 rounded-lg shadow-sm border-2 border-transparent hover:border-teal-500 transition-all flex flex-col justify-center items-center text-center group"
-                                >
-                                    <div
-                                        class="text-3xl mb-2 group-hover:scale-110 transition-transform"
-                                    >
-                                        ⛓️
-                                    </div>
-                                    <h4 class="font-bold text-slate-800">
-                                        Blockchain
-                                    </h4>
-                                    <p class="text-xs text-slate-500">
-                                        VDR (DID Registry)
-                                    </p>
-                                </div>
-                                <div
-                                    onclick="showEntityDetails('ssim')"
-                                    class="cursor-pointer bg-teal-50 p-4 rounded-lg shadow-sm border-2 border-teal-200 hover:border-teal-600 transition-all flex flex-col justify-center items-center text-center group"
-                                >
-                                    <div
-                                        class="text-3xl mb-2 group-hover:scale-110 transition-transform"
-                                    >
-                                        ⚙️
-                                    </div>
-                                    <h4 class="font-bold text-teal-900">
-                                        SSIM System
-                                    </h4>
-                                    <p class="text-xs text-teal-700">
-                                        Issuer (VC 발급)
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div
-                            class="lg:col-span-4 bg-slate-800 text-white rounded-2xl p-6 flex flex-col justify-center shadow-lg"
-                        >
-                            <div id="entity-details">
-                                <p
-                                    class="text-slate-300 text-sm leading-relaxed"
-                                >
-                                    다이어그램의 각 구성 요소를 클릭하면 SSI
-                                    관리 메커니즘(SSIM) 내에서의 구체적인 역할을
-                                    확인할 수 있습니다.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- 섹션 3: 핵심 메커니즘 (인터랙티브 시뮬레이터) -->
-            <section id="mechanisms" class="py-12 bg-slate-50">
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div class="mb-10">
-                        <h2 class="text-2xl font-bold text-slate-900">
-                            핵심 메커니즘 시뮬레이션
-                        </h2>
-                        <p class="text-slate-600 mt-2 max-w-3xl">
-                            프라이버시를 위한 <strong>선택적 공개(SD)</strong>와
-                            보안을 위한 <strong>동적 권한 관리</strong>가 어떻게
-                            작동하는지 체험해 보세요.
-                        </p>
-                    </div>
-
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                        <!-- 시뮬레이터 1: 선택적 공개 시뮬레이터 -->
-                        <div
-                            class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6"
-                        >
-                            <div class="flex items-center justify-between mb-6">
-                                <h3 class="text-lg font-bold text-slate-800">
-                                    1. 선택적 공개(SD) 시뮬레이터
-                                </h3>
-                                <span
-                                    class="bg-teal-100 text-teal-800 text-xs px-2 py-1 rounded-full font-bold"
-                                    >프라이버시 엔진</span
-                                >
-                            </div>
-                            <p class="text-sm text-slate-500 mb-4">
-                                증명서(VP)에 포함할 속성을 선택하세요. 속성을
-                                많이 공개할수록
-                                <strong>엔트로피(프라이버시)</strong>는 낮아지고
-                                <strong>공격 성공률</strong>은 높아집니다.
-                            </p>
-
-                            <div
-                                class="space-y-3 mb-6 bg-slate-50 p-4 rounded-lg"
-                            >
-                                <div class="flex items-center justify-between">
-                                    <label
-                                        class="flex items-center space-x-2 text-sm text-slate-700"
-                                    >
-                                        <input
-                                            type="checkbox"
-                                            class="sd-checkbox form-checkbox text-teal-600 rounded"
-                                            value="20"
-                                            checked
-                                            onchange="updateSDSim()"
-                                        />
-                                        <span>위치 데이터</span>
-                                    </label>
-                                    <span class="text-xs text-slate-400"
-                                        >높은 민감도</span
-                                    >
-                                </div>
-                                <div class="flex items-center justify-between">
-                                    <label
-                                        class="flex items-center space-x-2 text-sm text-slate-700"
-                                    >
-                                        <input
-                                            type="checkbox"
-                                            class="sd-checkbox form-checkbox text-teal-600 rounded"
-                                            value="15"
-                                            onchange="updateSDSim()"
-                                        />
-                                        <span>기기 고유 ID</span>
-                                    </label>
-                                    <span class="text-xs text-slate-400"
-                                        >중간 민감도</span
-                                    >
-                                </div>
-                                <div class="flex items-center justify-between">
-                                    <label
-                                        class="flex items-center space-x-2 text-sm text-slate-700"
-                                    >
-                                        <input
-                                            type="checkbox"
-                                            class="sd-checkbox form-checkbox text-teal-600 rounded"
-                                            value="30"
-                                            onchange="updateSDSim()"
-                                        />
-                                        <span>결제/금융 정보</span>
-                                    </label>
-                                    <span class="text-xs text-slate-400"
-                                        >매우 높은 민감도</span
-                                    >
-                                </div>
-                                <div class="flex items-center justify-between">
-                                    <label
-                                        class="flex items-center space-x-2 text-sm text-slate-700"
-                                    >
-                                        <input
-                                            type="checkbox"
-                                            class="sd-checkbox form-checkbox text-teal-600 rounded"
-                                            value="10"
-                                            onchange="updateSDSim()"
-                                        />
-                                        <span>사용 로그</span>
-                                    </label>
-                                    <span class="text-xs text-slate-400"
-                                        >낮은 민감도</span
-                                    >
-                                </div>
-                            </div>
-
-                            <div class="grid grid-cols-2 gap-4">
-                                <div
-                                    class="bg-slate-800 rounded-lg p-4 text-center"
-                                >
-                                    <div
-                                        class="text-xs text-slate-400 uppercase tracking-wider mb-1"
-                                    >
-                                        정보 엔트로피
-                                    </div>
-                                    <div
-                                        id="entropy-val"
-                                        class="text-2xl font-bold text-teal-400"
-                                    >
-                                        4.2
-                                    </div>
-                                    <div class="text-xs text-slate-500 mt-1">
-                                        (높을수록 안전)
-                                    </div>
-                                </div>
-                                <div
-                                    class="bg-slate-800 rounded-lg p-4 text-center"
-                                >
-                                    <div
-                                        class="text-xs text-slate-400 uppercase tracking-wider mb-1"
-                                    >
-                                        공격 성공률
-                                    </div>
-                                    <div
-                                        id="attack-val"
-                                        class="text-2xl font-bold text-red-400"
-                                    >
-                                        12.4%
-                                    </div>
-                                    <div class="text-xs text-slate-500 mt-1">
-                                        (낮을수록 안전)
-                                    </div>
-                                </div>
-                            </div>
-                            <div
-                                id="sd-status"
-                                class="mt-4 text-sm text-center font-medium text-teal-700"
-                            >
-                                상태: 높은 프라이버시 유지 중
-                            </div>
-                        </div>
-
-                        <!-- 시뮬레이터 2: 동적 권한 관리 시뮬레이터 -->
-                        <div
-                            class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6"
-                        >
-                            <div class="flex items-center justify-between mb-6">
-                                <h3 class="text-lg font-bold text-slate-800">
-                                    2. 상황 인식형 동적 권한
-                                </h3>
-                                <span
-                                    class="bg-indigo-100 text-indigo-800 text-xs px-2 py-1 rounded-full font-bold"
-                                    >제로 트러스트</span
-                                >
-                            </div>
-                            <p class="text-sm text-slate-500 mb-4">
-                                실시간 상황 정보(Context)에 따라
-                                <strong>최소 권한 집합</strong>이 생성됩니다.
-                                상황을 변경하여 권한이 어떻게 적응하는지
-                                확인하세요.
-                            </p>
-
-                            <div class="grid grid-cols-2 gap-4 mb-6">
-                                <div>
-                                    <label
-                                        class="block text-xs font-semibold text-slate-600 mb-1"
-                                        >기기 위치</label
-                                    >
-                                    <select
-                                        id="ctx-location"
-                                        onchange="updatePermSim()"
-                                        class="w-full text-sm border-slate-300 rounded-md shadow-sm bg-slate-50 p-2 focus:ring-teal-500 focus:border-teal-500"
-                                    >
-                                        <option value="safe">
-                                            보안 구역 (사무실)
-                                        </option>
-                                        <option value="public">
-                                            공공 장소 (카페)
-                                        </option>
-                                        <option value="unknown">
-                                            알 수 없는 위치 (해외)
-                                        </option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label
-                                        class="block text-xs font-semibold text-slate-600 mb-1"
-                                        >네트워크 상태</label
-                                    >
-                                    <select
-                                        id="ctx-network"
-                                        onchange="updatePermSim()"
-                                        class="w-full text-sm border-slate-300 rounded-md shadow-sm bg-slate-50 p-2 focus:ring-teal-500 focus:border-teal-500"
-                                    >
-                                        <option value="encrypted">
-                                            VPN / 암호화 통신
-                                        </option>
-                                        <option value="open">
-                                            개방형 Wi-Fi
-                                        </option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label
-                                        class="block text-xs font-semibold text-slate-600 mb-1"
-                                        >시간대</label
-                                    >
-                                    <select
-                                        id="ctx-time"
-                                        onchange="updatePermSim()"
-                                        class="w-full text-sm border-slate-300 rounded-md shadow-sm bg-slate-50 p-2 focus:ring-teal-500 focus:border-teal-500"
-                                    >
-                                        <option value="work">업무 시간</option>
-                                        <option value="off">
-                                            업무 외 시간
-                                        </option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div
-                                class="bg-slate-900 rounded-lg p-4 font-mono text-xs text-green-400 h-40 overflow-y-auto"
-                            >
-                                <div
-                                    class="border-b border-slate-700 pb-2 mb-2 text-slate-400"
-                                >
-                                    > 상황 평가 중...<br />
-                                    > 최소 권한 집합 생성 완료.
-                                </div>
-                                <ul id="perm-list" class="space-y-1"></ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- 섹션 4: 성능 데이터 -->
-            <section id="performance" class="py-12 bg-white">
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div class="mb-10">
-                        <h2 class="text-2xl font-bold text-slate-900">
-                            성능 분석 데이터
-                        </h2>
-                        <p class="text-slate-600 mt-2 max-w-3xl">
-                            제안된 메커니즘을 전통적 방식 및 차분 프라이버시(DP)
-                            방식과 비교한 실험 결과입니다.
-                        </p>
-                    </div>
-
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                        <div
-                            class="bg-white rounded-xl shadow-sm border border-slate-200 p-4"
-                        >
-                            <h4
-                                class="text-sm font-bold text-slate-700 mb-4 text-center"
-                            >
-                                인증서 생성 시간 (1만 명 기준)
-                            </h4>
-                            <div class="chart-container">
-                                <canvas id="genTimeChart"></canvas>
-                            </div>
-                        </div>
-
-                        <div
-                            class="bg-white rounded-xl shadow-sm border border-slate-200 p-4"
-                        >
-                            <h4
-                                class="text-sm font-bold text-slate-700 mb-4 text-center"
-                            >
-                                동적 권한 생성 속도 (1천 개 정책)
-                            </h4>
-                            <div class="chart-container">
-                                <canvas id="permTimeChart"></canvas>
-                            </div>
-                        </div>
-
-                        <div
-                            class="bg-white rounded-xl shadow-sm border border-slate-200 p-4"
-                        >
-                            <h4
-                                class="text-sm font-bold text-slate-700 mb-4 text-center"
-                            >
-                                프라이버시 엔트로피 및 공격 저항성
-                            </h4>
-                            <div class="chart-container">
-                                <canvas id="privacyChart"></canvas>
-                            </div>
-                        </div>
-
-                        <div
-                            class="bg-white rounded-xl shadow-sm border border-slate-200 p-4"
-                        >
-                            <h4
-                                class="text-sm font-bold text-slate-700 mb-4 text-center"
-                            >
-                                시스템 확장성 (CPU 및 메모리)
-                            </h4>
-                            <div class="chart-container">
-                                <canvas id="overheadChart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-        </main>
-
-        <footer class="bg-slate-900 text-slate-400 py-8">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                <p class="text-sm">
-                    논문 원제: "Blockchain-Based Self-Sovereign Identity
-                    Management Mechanism in AIoT Environments" (Ren et al.,
-                    Electronics 2025)
-                </p>
-                <p class="text-xs mt-2 text-slate-600">
-                    본 대시보드는 2026년 KIoT SSI 교육 과정의 일환으로
-                    분석되었습니다.
-                </p>
             </div>
-        </footer>
+        </section>
 
-        <script>
-            function scrollToSection(id) {
-                document
-                    .getElementById(id)
-                    .scrollIntoView({ behavior: "smooth" });
-                document
-                    .querySelectorAll(".nav-item")
-                    .forEach((el) => el.classList.remove("active"));
-                const activeBtn = Array.from(
-                    document.querySelectorAll(".nav-item"),
-                ).find((el) => el.getAttribute("onclick").includes(id));
-                if (activeBtn) activeBtn.classList.add("active");
-                document.getElementById("mobile-menu").classList.add("hidden");
+        <section id="performance" class="py-20 bg-white">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="mb-16">
+                    <h2 class="text-3xl font-bold text-slate-900 mb-4">성능 및 확장성 분석</h2>
+                    <p class="text-slate-600 max-w-2xl">
+                        논문의 실험 섹션(Section 5) 데이터를 시각화했습니다. 
+                    </p>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                    <div class="bg-white rounded-3xl shadow-sm border border-slate-200 p-8">
+                        <h4 class="text-sm font-bold text-slate-700 mb-6 text-center">자격 증명 생성 시간 비교 (1만 명 부하)</h4>
+                        <div class="chart-container"><canvas id="genTimeChart"></canvas></div>
+                    </div>
+                    <div class="bg-white rounded-3xl shadow-sm border border-slate-200 p-8">
+                        <h4 class="text-sm font-bold text-slate-700 mb-6 text-center">동적 권한 할당 응답 시간 (1,000개 정책)</h4>
+                        <div class="chart-container"><canvas id="permTimeChart"></canvas></div>
+                    </div>
+                    <div class="bg-white rounded-3xl shadow-sm border border-slate-200 p-8">
+                        <h4 class="text-sm font-bold text-slate-700 mb-6 text-center">프라이버시(Entropy) vs 공격 내성(Risk)</h4>
+                        <div class="chart-container"><canvas id="privacyChart"></canvas></div>
+                    </div>
+                    <div class="bg-white rounded-3xl shadow-sm border border-slate-200 p-8">
+                        <h4 class="text-sm font-bold text-slate-700 mb-6 text-center">시스템 확장성 지표 (CPU & 메모리)</h4>
+                        <div class="chart-container"><canvas id="overheadChart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-slate-900 text-slate-400 py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <p class="text-sm font-medium">논문 참조: "Blockchain-Based Self-Sovereign Identity Management Mechanism in AIoT Environments" (Ren et al., 2025)</p>
+        </div>
+    </footer>
+
+    <script>
+        function scrollToSection(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.scrollIntoView({ behavior: 'smooth' });
+            document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
+            const targetBtn = Array.from(document.querySelectorAll('.nav-item')).find(btn => btn.getAttribute('onclick').includes(id));
+            if (targetBtn) targetBtn.classList.add('active');
+            document.getElementById('mobile-menu').classList.add('hidden');
+        }
+
+        document.getElementById('mobile-menu-btn').addEventListener('click', () => {
+            const menu = document.getElementById('mobile-menu');
+            menu.classList.toggle('hidden');
+        });
+
+        const entities = {
+            'kgc': {
+                title: 'DID Registrar (KGC)',
+                icon: '🔑',
+                desc: '키 생성 센터(KGC)는 사용자의 신원 생성을 돕는 <strong>DID Registrar</strong> 역할을 수행합니다. 부분 개인키를 생성하여 사용자에게 전달하며, 블록체인(VDR)에 공개키 파라미터를 등록하여 누구나 신원을 해석(Resolution)할 수 있게 합니다.'
+            },
+            'user': {
+                title: 'Holder & DID Subject',
+                icon: '👤',
+                desc: 'AIoT 장치 또는 사용자는 신원의 주인(Subject)이자 자격 증명을 소유하는 <strong>Holder</strong>입니다. Issuer로부터 VC를 발급받아 지갑에 보관하며, 서비스 접근 시 필요한 데이터만 골라 VP를 생성해 제출합니다.'
+            },
+            'blockchain': {
+                title: 'VDR (DID Registry)',
+                icon: '⛓️',
+                desc: '블록체인은 <strong>VDR(Verifiable Data Registry)</strong>로서 DID 문서와 Issuer의 공개키, 스키마 정보를 분산 저장합니다. Verifier는 이곳에서 정보를 조회(Resolve)하여 제출된 VP의 진위 여부를 확인합니다.'
+            },
+            'ssim': {
+                title: 'Issuer (SSIM 시스템)',
+                icon: '⚙️',
+                desc: 'SSIM은 신원 속성을 검증하여 <strong>VC(Verifiable Credential)</strong>를 발행하는 <strong>Issuer</strong>입니다. 제로 트러스트 엔진을 내장하여, 각 접근 요청 시 상황 정보(Context)를 실시간으로 평가하고 권한을 결정합니다.'
             }
+        };
 
-            document
-                .getElementById("mobile-menu-btn")
-                .addEventListener("click", () => {
-                    document
-                        .getElementById("mobile-menu")
-                        .classList.toggle("hidden");
-                });
+        function showEntityDetails(key) {
+            const data = entities[key];
+            const target = document.getElementById('entity-details');
+            
+            // 버튼 상태 업데이트
+            document.querySelectorAll('.entity-btn').forEach(btn => {
+                btn.classList.remove('active-teal');
+                btn.classList.add('inactive');
+            });
+            const activeBtn = document.getElementById(`btn-${key}`);
+            activeBtn.classList.remove('inactive');
+            activeBtn.classList.add('active-teal');
 
-            const entityData = {
-                kgc: {
-                    title: "DID Registrar (KGC)",
-                    desc: "키 생성 및 관리를 지원하는 엔티티입니다. 부분 키를 생성하여 사용자에게 전달하며, 블록체인(VDR)에 신원 정보를 등록하는 역할을 수행합니다. 마스터키를 독점하지 않아 탈중앙성을 유지합니다.",
-                    icon: "🔑",
-                },
-                user: {
-                    title: "Holder & DID Subject",
-                    desc: "신원 정보의 소유자이자 사용자인 장치입니다. 로컬에서 키 쌍을 생성하고, Issuer로부터 VC를 발급받아 필요할 때 최소한의 정보만 선택적으로 공개(VP 생성)하여 리소스에 접근합니다.",
-                    icon: "👤",
-                },
-                blockchain: {
-                    title: "VDR (DID Registry)",
-                    desc: "DID 문서, 스키마, 공개키 파라미터가 저장되는 분산 원장입니다. 신뢰할 수 있는 데이터 소스 역할을 하며, Verifier가 DID Resolution을 통해 검증 정보를 조회하는 대상입니다.",
-                    icon: "⛓️",
-                },
-                ssim: {
-                    title: "Issuer (SSIM 시스템)",
-                    desc: "사용자의 신원 속성을 검증하고 VC(Verifiable Credential)를 발행하는 핵심 모듈입니다. 제로 트러스트의 지속적 검증 원칙에 따라 실시간으로 상황을 평가하고 동적 권한을 할당합니다.",
-                    icon: "⚙️",
-                },
-            };
-
-            function showEntityDetails(key) {
-                const data = entityData[key];
-                const container = document.getElementById("entity-details");
-                container.innerHTML = `
-                <div class="animate-pulse">
-                    <div class="text-4xl mb-3">${data.icon}</div>
-                    <h3 class="text-xl font-bold mb-3 text-teal-400">${data.title}</h3>
-                    <p class="text-slate-300 text-sm leading-relaxed border-t border-slate-700 pt-3">
+            target.innerHTML = `
+                <div class="fade-in">
+                    <div class="text-5xl mb-6">${data.icon}</div>
+                    <h3 class="text-2xl font-bold mb-4 text-teal-400">${data.title}</h3>
+                    <p class="text-slate-300 leading-relaxed text-sm border-t border-slate-700 pt-6">
                         ${data.desc}
                     </p>
                 </div>
             `;
-                setTimeout(
-                    () =>
-                        container.firstChild.classList.remove("animate-pulse"),
-                    500,
-                );
-            }
+        }
 
-            function updateSDSim() {
-                const checkboxes = document.querySelectorAll(".sd-checkbox");
-                const checkedCount = Array.from(checkboxes).filter(
-                    (cb) => cb.checked,
-                ).length;
+        function updateSDSim() {
+            const boxes = document.querySelectorAll('.sd-checkbox');
+            const count = Array.from(boxes).filter(b => b.checked).length;
+            let entropy, risk;
+            if (count === 1) { entropy = 4.2; risk = 12.4; }
+            else if (count === 2) { entropy = 3.8; risk = 20.5; }
+            else if (count === 3) { entropy = 2.9; risk = 45.0; }
+            else if (count >= 4) { entropy = 0.0; risk = 98.6; }
+            else { entropy = 5.0; risk = 0.0; }
+            document.getElementById('entropy-val').innerText = entropy.toFixed(1);
+            document.getElementById('attack-val').innerText = risk.toFixed(1) + "%";
+        }
 
-                let entropy = 0;
-                let attackRate = 0;
-                let statusText = "";
-                let statusColor = "";
+        function updatePermSim() {
+            const loc = document.getElementById('ctx-location').value;
+            const net = document.getElementById('ctx-network').value;
+            const list = document.getElementById('perm-list');
+            list.innerHTML = '';
+            const log = (msg, type) => {
+                const li = document.createElement('li');
+                li.className = type === 'ok' ? 'text-green-400' : 'text-red-400';
+                li.innerText = `[${type === 'ok' ? 'PASS' : 'DENY'}] ${msg}`;
+                list.appendChild(li);
+            };
+            log("VP 검증 성공: 신원 소유권 확인됨", "ok");
+            if (loc === 'safe') {
+                log("내부 네트워크 리소스 접근 허용", "ok");
+                if (net === 'encrypted') log("민감 데이터 쓰기 권한 부여 (최소 권한)", "ok");
+                else log("암호화되지 않은 채널: 쓰기 권한 제한", "fail");
+            } else if (loc === 'public') {
+                log("공용 리소스 읽기 전용 권한 부여", "ok");
+                log("관리자 페이지 접근 거부 (비보안 구역)", "fail");
+            } else { log("알 수 없는 위치: 모든 리소스 접근 거부", "fail"); }
+        }
 
-                if (checkedCount === 0) {
-                    entropy = 5.0;
-                    attackRate = 0;
-                    statusText = "접근 불가 (데이터 없음)";
-                    statusColor = "text-slate-500";
-                } else if (checkedCount === 1) {
-                    entropy = 4.2;
-                    attackRate = 12.4;
-                    statusText = "최적의 프라이버시 (선택적 공개)";
-                    statusColor = "text-teal-600";
-                } else if (checkedCount === 2) {
-                    entropy = 3.8;
-                    attackRate = 20.5;
-                    statusText = "양호한 프라이버시";
-                    statusColor = "text-teal-500";
-                } else if (checkedCount === 3) {
-                    entropy = 2.9;
-                    attackRate = 45.0;
-                    statusText = "프라이버시 위험 노출";
-                    statusColor = "text-orange-500";
-                } else {
-                    entropy = 0.0;
-                    attackRate = 98.6;
-                    statusText = "치명적 위험 (전체 공개)";
-                    statusColor = "text-red-500";
-                }
-
-                document.getElementById("entropy-val").innerText =
-                    entropy.toFixed(1);
-                document.getElementById("attack-val").innerText =
-                    attackRate.toFixed(1) + "%";
-                const statusEl = document.getElementById("sd-status");
-                statusEl.innerText = "상태: " + statusText;
-                statusEl.className =
-                    "mt-4 text-sm text-center font-medium " + statusColor;
-            }
-
-            function updatePermSim() {
-                const loc = document.getElementById("ctx-location").value;
-                const net = document.getElementById("ctx-network").value;
-                const time = document.getElementById("ctx-time").value;
-                const list = document.getElementById("perm-list");
-                list.innerHTML = "";
-
-                const addPerm = (text, type = "success") => {
-                    const li = document.createElement("li");
-                    li.innerHTML =
-                        type === "success"
-                            ? `<span class="text-green-400">[허용]</span> ${text}`
-                            : `<span class="text-red-400">[거부]</span> ${text}`;
-                    list.appendChild(li);
-                };
-
-                addPerm("신원 검증 완료");
-                if (loc === "safe") {
-                    addPerm("민감 센서 데이터 읽기");
-                    if (net === "encrypted") {
-                        addPerm("펌웨어 설정 수정");
-                        addPerm("관리자 패널 접근");
-                    } else {
-                        addPerm("펌웨어 수정 거부 (비암호화 네트워크)");
-                    }
-                } else if (loc === "public") {
-                    addPerm("공공 상태 정보 읽기");
-                    addPerm("민감 데이터 접근 거부 (공공 위치)");
-                } else {
-                    addPerm("리소스 접근 거부 (비인가 지역)");
-                }
-
-                if (time === "off" && loc !== "safe") {
-                    list.innerHTML = "";
-                    addPerm("신원 검증 시도");
-                    addPerm("접근 요청 거절 (업무 외 시간 & 외부)", "denied");
-                }
-            }
-
-            document.addEventListener("DOMContentLoaded", () => {
-                updateSDSim();
-                updatePermSim();
-
-                const chartOptions = {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: "bottom",
-                            labels: { boxWidth: 12, font: { size: 10 } },
-                        },
-                    },
-                };
-
-                new Chart(document.getElementById("genTimeChart"), {
-                    type: "line",
-                    data: {
-                        labels: ["1k", "2k", "4k", "6k", "8k", "10k"],
-                        datasets: [
-                            {
-                                label: "제안된 SD 방식",
-                                data: [2, 4, 6, 8, 10, 12.3],
-                                borderColor: "#0f766e",
-                                tension: 0.1,
-                            },
-                            {
-                                label: "전통적 방식",
-                                data: [5, 10, 20, 28, 38, 45.2],
-                                borderColor: "#94a3b8",
-                                borderDash: [5, 5],
-                                tension: 0.1,
-                            },
-                        ],
-                    },
-                    options: chartOptions,
-                });
-
-                new Chart(document.getElementById("permTimeChart"), {
-                    type: "line",
-                    data: {
-                        labels: ["100", "300", "500", "700", "900", "1000"],
-                        datasets: [
-                            {
-                                label: "제안된 메커니즘",
-                                data: [2.1, 5, 9, 12, 15, 16.7],
-                                borderColor: "#0f766e",
-                                backgroundColor: "rgba(15, 118, 110, 0.1)",
-                                fill: true,
-                            },
-                            {
-                                label: "전통적 방식",
-                                data: [5.2, 18, 30, 45, 62, 71.9],
-                                borderColor: "#dc2626",
-                                tension: 0.1,
-                            },
-                        ],
-                    },
-                    options: chartOptions,
-                });
-
-                new Chart(document.getElementById("privacyChart"), {
-                    type: "bar",
-                    data: {
-                        labels: [
-                            "SD (1개 속성)",
-                            "SD (5개 속성)",
-                            "차분 프라이버시",
-                            "전체 공개",
-                        ],
-                        datasets: [
-                            {
-                                label: "엔트로피 (높을수록 좋음)",
-                                data: [4.2, 3.8, 3.1, 0.0],
-                                backgroundColor: "#0f766e",
-                                yAxisID: "y",
-                            },
-                            {
-                                label: "공격 성공률 % (낮을수록 좋음)",
-                                data: [12.4, 15.7, 24.7, 98.6],
-                                backgroundColor: "#ef4444",
-                                yAxisID: "y1",
-                            },
-                        ],
-                    },
-                    options: {
-                        ...chartOptions,
-                        scales: {
-                            y: {
-                                type: "linear",
-                                position: "left",
-                                title: { display: true, text: "엔트로피" },
-                            },
-                            y1: {
-                                type: "linear",
-                                position: "right",
-                                grid: { drawOnChartArea: false },
-                                title: { display: true, text: "성공률 %" },
-                            },
-                        },
-                    },
-                });
-
-                new Chart(document.getElementById("overheadChart"), {
-                    type: "line",
-                    data: {
-                        labels: ["1k", "3k", "5k", "7k", "9k", "10k"],
-                        datasets: [
-                            {
-                                label: "CPU 사용률 (%)",
-                                data: [18.5, 19.8, 21.5, 23.1, 24.9, 25.4],
-                                borderColor: "#6366f1",
-                            },
-                            {
-                                label: "메모리 사용 (MB)",
-                                data: [15.3, 17.2, 19.1, 21.2, 23.6, 24.3],
-                                borderColor: "#8b5cf6",
-                            },
-                        ],
-                    },
-                    options: chartOptions,
-                });
+        function initCharts() {
+            const commonOptions = {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } }
+            };
+            new Chart(document.getElementById('genTimeChart'), {
+                type: 'line',
+                data: {
+                    labels: ['1k', '4k', '7k', '10k'],
+                    datasets: [
+                        { label: '제안 방식 (SD)', data: [2.5, 6.2, 9.5, 12.3], borderColor: '#0f766e', tension: 0.1 },
+                        { label: '전통 방식', data: [5.0, 18.2, 32.5, 45.2], borderColor: '#94a3b8', borderDash: [5,5], tension: 0.1 }
+                    ]
+                }, options: commonOptions
             });
-        </script>
-    </body>
+            new Chart(document.getElementById('permTimeChart'), {
+                type: 'line',
+                data: {
+                    labels: ['100', '400', '700', '1000'],
+                    datasets: [
+                        { label: '제안 방식', data: [2.1, 7.5, 12.0, 16.7], borderColor: '#0f766e', fill: true, backgroundColor: 'rgba(15, 118, 110, 0.1)' },
+                        { label: '전통 방식', data: [5.2, 22.4, 45.8, 71.9], borderColor: '#dc2626', tension: 0.1 }
+                    ]
+                }, options: commonOptions
+            });
+            new Chart(document.getElementById('privacyChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['SD(1개)', 'SD(5개)', 'DP방식', '전체공개'],
+                    datasets: [
+                        { label: '엔트로피(↑)', data: [4.2, 3.8, 3.1, 0.0], backgroundColor: '#0f766e', yAxisID: 'y' },
+                        { label: '공격 위험(↓)', data: [12.4, 15.7, 24.7, 98.6], backgroundColor: '#ef4444', yAxisID: 'y1' }
+                    ]
+                }, options: { ...commonOptions, scales: { 
+                    y: { type: 'linear', position: 'left' },
+                    y1: { type: 'linear', position: 'right', grid: { display: false } }
+                }}
+            });
+            new Chart(document.getElementById('overheadChart'), {
+                type: 'line',
+                data: {
+                    labels: ['1k', '4k', '7k', '10k'],
+                    datasets: [
+                        { label: 'CPU (%)', data: [18.5, 20.7, 23.1, 25.4], borderColor: '#6366f1' },
+                        { label: '메모리 (MB)', data: [15.3, 18.3, 21.2, 24.3], borderColor: '#8b5cf6' }
+                    ]
+                }, options: commonOptions
+            });
+        }
+
+        window.onload = () => {
+            showEntityDetails('kgc'); // 초기값
+            updateSDSim();
+            updatePermSim();
+            initCharts();
+        };
+    </script>
+</body>
 </html>
